@@ -44,8 +44,13 @@
     } else {
         UIBarButtonItem *doneButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneAction:)];
         [self.navigationItem setRightBarButtonItem:doneButtonItem];
-        [self.navigationItem setTitle:@"Loading..."];
+        [self.navigationItem setTitle:@"LOADING..."];
     }
+
+    UIView *barBottom = [[UIView alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 103, [UIScreen mainScreen].bounds.size.width, 103)];
+    [barBottom setBackgroundColor:[UIColor colorWithRed:0.1294117647 green:0.1294117647 blue:0.1294117647 alpha:1]];
+
+    [self.view addSubview:barBottom];
 
 	[self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
 }
@@ -107,7 +112,7 @@
                                                       animated:NO];
             }
             
-            [self.navigationItem setTitle:self.singleSelection ? @"Pick Photo" : @"Pick Photos"];
+            [self.navigationItem setTitle:self.singleSelection ? @"PICK PHOTO" : @"PICK PHOTOS"];
         });
     }
 }

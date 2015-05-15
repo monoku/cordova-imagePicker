@@ -28,8 +28,23 @@
 	
 	[self.navigationItem setTitle:@"Loading..."];
 
-    UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self.parent action:@selector(cancelImagePicker)];
-	[self.navigationItem setRightBarButtonItem:cancelButton];
+    self.navigationController.navigationBar.barTintColor = [UIColor colorWithRed:0.03921568627 green:0.03921568627 blue:0.03921568627 alpha:1];
+
+    self.navigationController.navigationBar.titleTextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                                                   [UIColor colorWithRed:245.0/255.0 green:245.0/255.0 blue:245.0/255.0 alpha:1.0], NSForegroundColorAttributeName,
+                                                                   [UIFont fontWithName:@"HelveticaNeue" size:13.0], NSFontAttributeName, nil];
+
+    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
+
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
+    btn.frame = CGRectMake(0, 0, 30, 30);
+    UIImage *imgClose = [[UIImage imageNamed:@"close.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    [btn setImage:imgClose forState:UIControlStateNormal];
+    [btn addTarget:self.parent action:@selector(cancelImagePicker) forControlEvents:UIControlEventTouchUpInside];
+
+    UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithCustomView:btn];
+
+	[self.navigationItem setLeftBarButtonItem:cancelButton];
 
     NSMutableArray *tempArray = [[NSMutableArray alloc] init];
 	self.assetGroups = tempArray;
@@ -85,7 +100,7 @@
 - (void)reloadTableView
 {
 	[self.tableView reloadData];
-	[self.navigationItem setTitle:@"Select an Album"];
+	[self.navigationItem setTitle:@"SELECT AN ALBUM"];
 }
 
 - (BOOL)shouldSelectAsset:(ELCAsset *)asset previousCount:(NSUInteger)previousCount

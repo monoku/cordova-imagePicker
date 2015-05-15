@@ -54,6 +54,8 @@
 		<resource-file src="src/ios/ELCImagePicker/Resources/ELCAssetTablePicker.xib" />
 		<resource-file src="src/ios/ELCImagePicker/Resources/Overlay.png" />
 		<resource-file src="src/ios/ELCImagePicker/Resources/Overlay@2x.png" />
+		<resource-file src="src/ios/ELCImagePicker/Resources/close@2x~iphone.png" />
+		<resource-file src="src/ios/ELCImagePicker/Resources/close@3x~iphone.png" />
 	</platform>
 
 	<!-- android -->
