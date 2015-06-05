@@ -18,41 +18,42 @@
 @synthesize callbackId;
 
 - (void) getPictures:(CDVInvokedUrlCommand *)command {
-	NSDictionary *options = [command.arguments objectAtIndex: 0];
+    NSDictionary *options = [command.arguments objectAtIndex: 0];
 
-	NSInteger maximumImagesCount = [[options objectForKey:@"maximumImagesCount"] integerValue];
-	self.width = [[options objectForKey:@"width"] integerValue];
-	self.height = [[options objectForKey:@"height"] integerValue];
-	self.quality = [[options objectForKey:@"quality"] integerValue];
+    NSInteger maximumImagesCount = [[options objectForKey:@"maximumImagesCount"] integerValue];
+    self.width = [[options objectForKey:@"width"] integerValue];
+    self.height = [[options objectForKey:@"height"] integerValue];
+    self.quality = [[options objectForKey:@"quality"] integerValue];
 
-	// Create the an album controller and image picker
-	ELCAlbumPickerController *albumController = [[ELCAlbumPickerController alloc] init];
-	
-	if (maximumImagesCount == 1) {
-      albumController.immediateReturn = true;
-      albumController.singleSelection = true;
-   } else {
-      albumController.immediateReturn = false;
-      albumController.singleSelection = false;
-   }
+    // Create the an album controller and image picker
+//  ELCAlbumPickerController *albumController = [[ELCAlbumPickerController alloc] init];
+    ELCAssetTablePicker *picker = [[ELCAssetTablePicker alloc] initWithNibName: nil bundle: nil];
+    
+//  if (maximumImagesCount == 1) {
+//      albumController.immediateReturn = true;
+//      albumController.singleSelection = true;
+//   } else {
+//      albumController.immediateReturn = false;
+//      albumController.singleSelection = false;
+//   }
    
-   ELCImagePickerController *imagePicker = [[ELCImagePickerController alloc] initWithRootViewController:albumController];
-   imagePicker.maximumImagesCount = maximumImagesCount;
-   imagePicker.returnsOriginalImage = 1;
-   imagePicker.imagePickerDelegate = self;
+    ELCImagePickerController *imagePicker = [[ELCImagePickerController alloc] initWithRootViewController:picker];
+    imagePicker.maximumImagesCount = maximumImagesCount;
+    imagePicker.returnsOriginalImage = 1;
+    imagePicker.imagePickerDelegate = self;
 
-   albumController.parent = imagePicker;
-	self.callbackId = command.callbackId;
-	// Present modally
-	[self.viewController presentViewController:imagePicker
-	                       animated:YES
-	                     completion:nil];
+    picker.parent = imagePicker;
+    self.callbackId = command.callbackId;
+    // Present modally
+    [self.viewController presentViewController:imagePicker
+                           animated:YES
+                         completion:nil];
 }
 
 
 - (void)elcImagePickerController:(ELCImagePickerController *)picker didFinishPickingMediaWithInfo:(NSArray *)info {
-	CDVPluginResult* result = nil;
-	NSMutableArray *resultStrings = [[NSMutableArray alloc] init];
+    CDVPluginResult* result = nil;
+    NSMutableArray *resultStrings = [[NSMutableArray alloc] init];
     NSData* data = nil;
     NSString* docsPath = [NSTemporaryDirectory()stringByStandardizingPath];
     NSError* err = nil;
@@ -61,7 +62,7 @@
     ALAsset* asset = nil;
     UIImageOrientation orientation = UIImageOrientationUp;;
     CGSize targetSize = CGSizeMake(self.width, self.height);
-	for (NSDictionary *dict in info) {
+    for (NSDictionary *dict in info) {
         asset = [dict objectForKey:@"ALAsset"];
         // From ELCImagePickerController.m
 
@@ -99,22 +100,22 @@
             }
         }
 
-	}
-	
-	if (nil == result) {
-		result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultStrings];
-	}
+    }
+    
+    if (nil == result) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultStrings];
+    }
 
-	[self.viewController dismissViewControllerAnimated:YES completion:nil];
-	[self.commandDelegate sendPluginResult:result callbackId:self.callbackId];
+    [self.viewController dismissViewControllerAnimated:YES completion:nil];
+    [self.commandDelegate sendPluginResult:result callbackId:self.callbackId];
 }
 
 - (void)elcImagePickerControllerDidCancel:(ELCImagePickerController *)picker {
-	[self.viewController dismissViewControllerAnimated:YES completion:nil];
-	CDVPluginResult* pluginResult = nil;
+    [self.viewController dismissViewControllerAnimated:YES completion:nil];
+    CDVPluginResult* pluginResult = nil;
     NSArray* emptyArray = [NSArray array];
-	pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:emptyArray];
-	[self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:emptyArray];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 }
 
 - (UIImage*)imageByScalingNotCroppingForSize:(UIImage*)anImage toSize:(CGSize)frameSize

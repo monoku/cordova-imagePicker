@@ -9,6 +9,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "ELCAssetSelectionDelegate.h"
 #import "ELCAssetPickerFilterDelegate.h"
+#import "ELCAssetTablePicker.h"
 
 @interface ELCAlbumPickerController : UITableViewController <ELCAssetSelectionDelegate>
 
@@ -16,6 +17,11 @@
 @property (nonatomic, strong) NSMutableArray *assetGroups;
 @property (nonatomic, assign) BOOL singleSelection;
 @property (nonatomic, assign) BOOL immediateReturn;
+@property (nonatomic, assign) BOOL ready;
+@property (nonatomic, assign) ELCAssetTablePicker* parentPicker;
+
+- (void)setImagePickerParent:(ELCAssetTablePicker *)picker;
+
 
 // optional, can be used to filter the assets displayed
 @property (nonatomic, weak) id<ELCAssetPickerFilterDelegate> assetPickerFilterDelegate;

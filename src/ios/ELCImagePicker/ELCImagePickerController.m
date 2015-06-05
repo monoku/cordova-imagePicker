@@ -19,18 +19,22 @@
 
 - (id)initImagePicker
 {
-    ELCAlbumPickerController *albumPicker = [[ELCAlbumPickerController alloc] initWithStyle:UITableViewStylePlain];
+//    ELCAlbumPickerController *albumPicker = [[ELCAlbumPickerController alloc] initWithStyle:UITableViewStylePlain];
 
-    self = [super initWithRootViewController:albumPicker];
-    if (self) {
-        self.maximumImagesCount = 4;
-        [albumPicker setParent:self];
-    }
+//    self = [super initWithRootViewController:albumPicker];
+//    if (self) {
+//        self.maximumImagesCount = 4;
+//        [albumPicker setParent:self];
+//    }
+    ELCAssetTablePicker *picker = [[ELCAssetTablePicker alloc] initWithNibName: nil bundle: nil];
+    self = [super initWithRootViewController:picker];
+    
     return self;
 }
 
 - (id)initWithRootViewController:(UIViewController *)rootViewController
 {
+    NSLog(@"=======RootViewCtrlr");
     self = [super initWithRootViewController:rootViewController];
     if (self) {
         self.maximumImagesCount = 4;
@@ -40,9 +44,9 @@
 
 - (void)cancelImagePicker
 {
-	if ([_imagePickerDelegate respondsToSelector:@selector(elcImagePickerControllerDidCancel:)]) {
-		[_imagePickerDelegate performSelector:@selector(elcImagePickerControllerDidCancel:) withObject:self];
-	}
+    if ([_imagePickerDelegate respondsToSelector:@selector(elcImagePickerControllerDidCancel:)]) {
+        [_imagePickerDelegate performSelector:@selector(elcImagePickerControllerDidCancel:) withObject:self];
+    }
 }
 
 - (BOOL)shouldSelectAsset:(ELCAsset *)asset previousCount:(NSUInteger)previousCount
@@ -62,23 +66,23 @@
 
 - (void)selectedAssets:(NSArray *)assets
 {
-	NSMutableArray *returnArray = [[NSMutableArray alloc] init];
+    NSMutableArray *returnArray = [[NSMutableArray alloc] init];
 
-	for(ALAsset *asset in assets) {
-		id obj = [asset valueForProperty:ALAssetPropertyType];
-		if (!obj) {
-			continue;
-		}
-		NSMutableDictionary *workingDictionary = [[NSMutableDictionary alloc] init];
-		[workingDictionary setObject:asset forKey:@"ALAsset"];
-		[workingDictionary setObject:[[asset valueForProperty:ALAssetPropertyURLs] valueForKey:[[[asset valueForProperty:ALAssetPropertyURLs] allKeys] objectAtIndex:0]] forKey:UIImagePickerControllerReferenceURL];
+    for(ALAsset *asset in assets) {
+        id obj = [asset valueForProperty:ALAssetPropertyType];
+        if (!obj) {
+            continue;
+        }
+        NSMutableDictionary *workingDictionary = [[NSMutableDictionary alloc] init];
+        [workingDictionary setObject:asset forKey:@"ALAsset"];
+        [workingDictionary setObject:[[asset valueForProperty:ALAssetPropertyURLs] valueForKey:[[[asset valueForProperty:ALAssetPropertyURLs] allKeys] objectAtIndex:0]] forKey:UIImagePickerControllerReferenceURL];
 
-		[returnArray addObject:workingDictionary];
+        [returnArray addObject:workingDictionary];
 
-	}
-	if (_imagePickerDelegate != nil && [_imagePickerDelegate respondsToSelector:@selector(elcImagePickerController:didFinishPickingMediaWithInfo:)]) {
-		[_imagePickerDelegate performSelector:@selector(elcImagePickerController:didFinishPickingMediaWithInfo:) withObject:self withObject:returnArray];
-	} else {
+    }
+    if (_imagePickerDelegate != nil && [_imagePickerDelegate respondsToSelector:@selector(elcImagePickerController:didFinishPickingMediaWithInfo:)]) {
+        [_imagePickerDelegate performSelector:@selector(elcImagePickerController:didFinishPickingMediaWithInfo:) withObject:self withObject:returnArray];
+    } else {
         [self popToRootViewControllerAnimated:NO];
     }
 }

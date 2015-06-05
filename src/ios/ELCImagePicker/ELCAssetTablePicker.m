@@ -12,6 +12,7 @@
 
 @interface ELCAssetTablePicker ()
 
+@property (nonatomic, strong) ALAssetsLibrary *library;
 @property (nonatomic, assign) int columns;
 
 @end
@@ -33,26 +34,107 @@
 
 - (void)viewDidLoad
 {
+    [super viewDidLoad];
+    
+//    [self.navigationItem setTitle:@"Loading..."];
+    
+    self.navigationController.navigationBar.barTintColor = [UIColor colorWithRed:0.03921568627 green:0.03921568627 blue:0.03921568627 alpha:1];
+    
+    self.navigationController.navigationBar.titleTextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                                                   [UIColor colorWithRed:245.0/255.0 green:245.0/255.0 blue:245.0/255.0 alpha:1.0], NSForegroundColorAttributeName,
+                                                                   [UIFont fontWithName:@"HelveticaNeue" size:13.0], NSFontAttributeName, nil];
+    
+    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
+    
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
+    btn.frame = CGRectMake(0, 0, 30, 30);
+    UIImage *imgClose = [[UIImage imageNamed:@"close.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    [btn setImage:imgClose forState:UIControlStateNormal];
+    [btn addTarget:self.parent action:@selector(cancelImagePicker) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithCustomView:btn];
+    
+    [self.navigationItem setLeftBarButtonItem:cancelButton];
+    
     [self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
-	[self.tableView setAllowsSelection:NO];
+  [self.tableView setAllowsSelection:NO];
 
     NSMutableArray *tempArray = [[NSMutableArray alloc] init];
     self.elcAssets = tempArray;
-	
+  
+//    UIView *footerContainer = [[UIView alloc]initWithFrame:CGRectMake(0,0, 300, 80)];
+//    
+//    UIButton *doneButtonItem = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+//    doneButtonItem.frame = CGRectMake(10,10, 300, 40);
+//    [doneButtonItem setTitle:@"Calibration" forState:UIControlStateNormal];
+//    [doneButtonItem addTarget:self action:@selector(doneAction:) forControlEvents:UIControlEventTouchUpInside];
+//    [footerContainer addSubview:doneButtonItem];
+//    
+//    self.tableView.tableFooterView = footerContainer;
     if (self.immediateReturn) {
         
     } else {
         UIBarButtonItem *doneButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneAction:)];
         [self.navigationItem setRightBarButtonItem:doneButtonItem];
-        [self.navigationItem setTitle:@"LOADING..."];
+////        [self.navigationItem setTitle:@"LOADING..."];
     }
 
-    UIView *barBottom = [[UIView alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 103, [UIScreen mainScreen].bounds.size.width, 103)];
-    [barBottom setBackgroundColor:[UIColor colorWithRed:0.1294117647 green:0.1294117647 blue:0.1294117647 alpha:1]];
+//    UIView *barBottom = [[UIView alloc] initWithFrame:CGRectMake(0, [UIScreen mainScreen].bounds.size.height - 103, [UIScreen mainScreen].bounds.size.width, 103)];
+//    [barBottom setBackgroundColor:[UIColor colorWithRed:0.1294117647 green:0.1294117647 blue:0.1294117647 alpha:1]];
+//
+//    [self.view addSubview:barBottom];
+    
+    ALAssetsLibrary *assetLibrary = [[ALAssetsLibrary alloc] init];
+    self.library = assetLibrary;
+    
+    if(self.assetGroup){
+        [self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
+    }else{
+        // Load Albums into assetGroups
+        dispatch_async(dispatch_get_main_queue(), ^
+               {
+                   @autoreleasepool {
+                       
+                       // Group enumerator Block
+                       void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) = ^(ALAssetsGroup *group, BOOL *stop)
+                       {
+                           if (group == nil) {
+                               return;
+                           }
+                           
+                           // added fix for camera albums order
+                           NSString *sGroupPropertyName = (NSString *)[group valueForProperty:ALAssetsGroupPropertyName];
+                           NSUInteger nType = [[group valueForProperty:ALAssetsGroupPropertyType] intValue];
+                           
+                           if ([[sGroupPropertyName lowercaseString] isEqualToString:@"camera roll"] && nType == ALAssetsGroupSavedPhotos) {
+                               self.assetGroup = group;
+                               [self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
+                           }
+                       };
+                       
+                       // Group Enumerator Failure Block
+                       void (^assetGroupEnumberatorFailure)(NSError *) = ^(NSError *error) {
+                           
+                           UIAlertView * alert = [[UIAlertView alloc] initWithTitle:@"Error" message:[NSString stringWithFormat:@"Album Error: %@ - %@", [error localizedDescription], [error localizedRecoverySuggestion]] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
+                           [alert show];
+                           
+                           NSLog(@"A problem occured %@", [error description]);
+                       };
+                       
+                       // Enumerate Albums
+                       [self.library enumerateGroupsWithTypes:ALAssetsGroupAll
+                                                   usingBlock:assetGroupEnumerator
+                                                 failureBlock:assetGroupEnumberatorFailure];
+                       
+                   }
+               });
 
-    [self.view addSubview:barBottom];
+    }
+    
+}
 
-	[self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
+- (void)cancelImagePicker
+{
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -76,13 +158,12 @@
 - (void)preparePhotos
 {
     @autoreleasepool {
-
         [self.assetGroup enumerateAssetsUsingBlock:^(ALAsset *result, NSUInteger index, BOOL *stop) {
             
             if (result == nil) {
                 return;
             }
-
+            
             ELCAsset *elcAsset = [[ELCAsset alloc] initWithAsset:result];
             [elcAsset setParent:self];
             
@@ -112,20 +193,166 @@
                                                       animated:NO];
             }
             
-            [self.navigationItem setTitle:self.singleSelection ? @"PICK PHOTO" : @"PICK PHOTOS"];
+//            [self.navigationItem setTitle:self.singleSelection ? @"PICK PHOTO" : @"PICK PHOTOS"];
+            
+            UIButton *titleLabelButton = [UIButton buttonWithType:UIButtonTypeCustom];
+            NSString *sGroupPropertyName = (NSString *)[self.assetGroup valueForProperty:ALAssetsGroupPropertyName];
+            
+            [titleLabelButton setTitle:sGroupPropertyName forState:UIControlStateNormal];
+            titleLabelButton.frame = CGRectMake(0, 0, 70, 44);
+//            titleLabelButton.font = [UIFont boldSystemFontOfSize:16];
+            [titleLabelButton addTarget:self action:@selector(didTapTitleView:) forControlEvents:UIControlEventTouchUpInside];
+            self.navigationItem.titleView = titleLabelButton;
         });
     }
 }
 
+- (IBAction)didTapTitleView:(id) sender{
+//    NSLog(@"GONNA SHOW ALBUMPICKER");
+    // Create the an album controller and image picker
+    ELCAlbumPickerController *albumController = [[ELCAlbumPickerController alloc] init];
+
+    albumController.immediateReturn = false;
+    albumController.singleSelection = false;
+    
+    [albumController setImagePickerParent:self];
+//    NSLog(@"GONNA SHOW ALBUMPICKER x 2");
+    [UIView animateWithDuration:0.4
+                     animations:^{
+                         [UIView setAnimationCurve:UIViewAnimationCurveEaseInOut];
+                         [self.navigationController pushViewController:albumController animated:NO];
+                         [UIView setAnimationTransition:UIViewAnimationTransitionFlipFromRight forView:self.navigationController.view cache:NO];
+                     }];
+    // TODO SHOOOOOWWWW
+}
+
+- (void)assignAssetGroupName:(NSString*)name{
+        if([[self.assetGroup valueForProperty:ALAssetsGroupPropertyName] isEqualToString:name]){
+            return;
+        }
+    
+        ALAssetsLibrary *assetLibrary = [[ALAssetsLibrary alloc] init];
+        self.library = assetLibrary;
+    
+        // Load Albums into assetGroups
+        dispatch_async(dispatch_get_main_queue(), ^
+                       {
+                           @autoreleasepool {
+
+                               // Group enumerator Block
+                               void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) = ^(ALAssetsGroup *group, BOOL *stop)
+                               {
+                                   if (group == nil) {
+                                       return;
+                                   }
+    
+                                   // added fix for camera albums order
+                                   NSString *sGroupPropertyName = (NSString *)[group valueForProperty:ALAssetsGroupPropertyName];
+    
+                                   if ([sGroupPropertyName isEqualToString:name]) {
+                                       [self assignAssetGroup:group];
+                                   }
+                               };
+    
+                               // Group Enumerator Failure Block
+                               void (^assetGroupEnumberatorFailure)(NSError *) = ^(NSError *error) {
+    
+                                   UIAlertView * alert = [[UIAlertView alloc] initWithTitle:@"Error" message:[NSString stringWithFormat:@"Album Error: %@ - %@", [error localizedDescription], [error localizedRecoverySuggestion]] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
+                                   [alert show];
+    
+                                   NSLog(@"A problem occured %@", [error description]);
+                               };
+    
+                               // Enumerate Albums
+                               [self.library enumerateGroupsWithTypes:ALAssetsGroupAll
+                                                           usingBlock:assetGroupEnumerator
+                                                         failureBlock:assetGroupEnumberatorFailure];
+                               
+                           }
+                       });
+}
+- (void)assignAssetGroup:(ALAssetsGroup*)assetGroup{
+//    self.tableView.contentOffset = CGPointMake(0, 0 - self.tableView.contentInset.top);
+    [self.tableView scrollRectToVisible:CGRectMake(0, 0, 1, 1) animated:NO];
+    //    [self.elcAssets removeAllObjects];
+    if([self.elcAssets count] > 0){
+        while([self.elcAssets count] > 0)
+        {
+//            NSLog(@"LENNN %ld",(long)[self.elcAssets count]);
+            [self.elcAssets removeLastObject];
+        }
+    }
+//    NSLog(@"RECEIVED NEW GROUUUPFF %@", [assetGroup valueForProperty:ALAssetsGroupPropertyName]);
+    [self.tableView reloadData];
+    self.assetGroup = assetGroup;
+    [self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
+}
+
+//    [self.assetGroups removeAllObjects];
+//    NSLog(@"CLEAR!!!!");
+//    
+//    ALAssetsLibrary *assetLibrary = [[ALAssetsLibrary alloc] init];
+//    self.library = assetLibrary;
+//    
+//    // Load Albums into assetGroups
+//    dispatch_async(dispatch_get_main_queue(), ^
+//                   {
+//                       @autoreleasepool {
+//                           
+//                           // Group enumerator Block
+//                           void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) = ^(ALAssetsGroup *group, BOOL *stop)
+//                           {
+//                               if (group == nil) {
+//                                   return;
+//                               }
+//                               
+//                               // added fix for camera albums order
+//                               NSString *sGroupPropertyName = (NSString *)[group valueForProperty:ALAssetsGroupPropertyName];
+//                               NSUInteger nType = [[group valueForProperty:ALAssetsGroupPropertyType] intValue];
+//                               
+//                               if ([[sGroupPropertyName lowercaseString] isEqualToString:@"camera roll"] && nType == ALAssetsGroupSavedPhotos) {
+//                                   [self.assetGroups insertObject:group atIndex:0];
+//                               }
+//                               else {
+//                                   [self.assetGroups addObject:group];
+//                               }
+//                               
+//                               // Reload albums
+////                               [self performSelectorOnMainThread:@selector(reloadTableView) withObject:nil waitUntilDone:YES];
+//                               NSLog(@"ADDED!!!! %@",group);
+//                               
+//                               //                if(!self.ready){
+//                               //                    self.ready = YES;
+//                               //                }
+//                           };
+//                           
+//                           // Group Enumerator Failure Block
+//                           void (^assetGroupEnumberatorFailure)(NSError *) = ^(NSError *error) {
+//                               
+//                               UIAlertView * alert = [[UIAlertView alloc] initWithTitle:@"Error" message:[NSString stringWithFormat:@"Album Error: %@ - %@", [error localizedDescription], [error localizedRecoverySuggestion]] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
+//                               [alert show];
+//                               
+//                               NSLog(@"A problem occured %@", [error description]);                                  
+//                           }; 
+//                           
+//                           // Enumerate Albums
+//                           [self.library enumerateGroupsWithTypes:ALAssetsGroupAll
+//                                                       usingBlock:assetGroupEnumerator
+//                                                     failureBlock:assetGroupEnumberatorFailure];
+//                           
+//                       }
+//                   });
+//}
+
 - (void)doneAction:(id)sender
-{	
-	NSMutableArray *selectedAssetsImages = [[NSMutableArray alloc] init];
-	    
-	for (ELCAsset *elcAsset in self.elcAssets) {
-		if ([elcAsset selected]) {
-			[selectedAssetsImages addObject:[elcAsset asset]];
-		}
-	}
+{ 
+  NSMutableArray *selectedAssetsImages = [[NSMutableArray alloc] init];
+      
+  for (ELCAsset *elcAsset in self.elcAssets) {
+    if ([elcAsset selected]) {
+      [selectedAssetsImages addObject:[elcAsset asset]];
+    }
+  }
     [self.parent selectedAssets:selectedAssetsImages];
 }
 
@@ -191,7 +418,7 @@
         
     ELCAssetCell *cell = (ELCAssetCell*)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
 
-    if (cell == nil) {		        
+    if (cell == nil) {            
         cell = [[ELCAssetCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
     }
     
@@ -202,7 +429,7 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return 79;
+  return 79;
 }
 
 - (int)totalSelectedAssets
@@ -210,10 +437,10 @@
     int count = 0;
     
     for (ELCAsset *asset in self.elcAssets) {
-		if (asset.selected) {
-            count++;	
-		}
-	}
+    if (asset.selected) {
+            count++;  
+    }
+  }
     
     return count;
 }
