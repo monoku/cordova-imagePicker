@@ -10,6 +10,7 @@
 #import "ELCAlbumPickerController.h"
 #import "ELCImagePickerController.h"
 #import "ELCAssetTablePicker.h"
+#import <ImageIO/ImageIO.h>
 
 #define CDV_PHOTO_PREFIX @"cdv_photo_"
 
@@ -62,18 +63,23 @@
     ALAsset* asset = nil;
     UIImageOrientation orientation = UIImageOrientationUp;;
     CGSize targetSize = CGSizeMake(self.width, self.height);
+    NSLog(@"RESULT? %@", info);
     for (NSDictionary *dict in info) {
         asset = [dict objectForKey:@"ALAsset"];
         // From ELCImagePickerController.m
+        NSLog(@"ASSET? %@", asset);
 
         int i = 1;
         do {
             filePath = [NSString stringWithFormat:@"%@/%@%03d.%@", docsPath, CDV_PHOTO_PREFIX, i++, @"jpg"];
         } while ([fileMgr fileExistsAtPath:filePath]);
         
+        NSLog(@"FILEPATH? %@", filePath);
+        
         @autoreleasepool {
             ALAssetRepresentation *assetRep = [asset defaultRepresentation];
             CGImageRef imgRef = NULL;
+//            UIImage *realImage = [UIImage imageWithCGImage:[assetRep fullResolutionImage]];
             
             //defaultRepresentation returns image as it appears in photo picker, rotated and sized,
             //so use UIImageOrientationUp when creating our image below.
@@ -92,11 +98,138 @@
                 data = UIImageJPEGRepresentation(scaledImage, self.quality/100.0f);
             }
             
+            
+//            ===============
+//            ROUND 1
+//            ===============
+//            NSDictionary* imageInfo = [NSDictionary dictionaryWithObject:realImage forKey:UIImagePickerControllerOriginalImage];
+//            NSLog(@"=======================>>>>>>> GONNA EXTRACT EXIF from %@", imageInfo);
+//            NSDictionary *controllerMetadata = [imageInfo objectForKey:@"UIImagePickerControllerMediaMetadata"];
+//            NSLog(@"%@", controllerMetadata);
+//            if (controllerMetadata) {
+//                NSMutableDictionary *EXIFDictionary = [[controllerMetadata objectForKey:(NSString *)kCGImagePropertyExifDictionary]mutableCopy];
+//                NSLog(@"=======================>>>>>>> has data  \n %@", EXIFDictionary);
+//            }
+
+            
+//            ===============
+//            ROUND 2
+//            ===============
+//            uint8_t *buffer = (Byte*)malloc(assetRep.size);
+//            
+//            NSLog(@"SIZE: %lld", assetRep.size);
+//            
+//            // buffer -> NSData object; free buffer afterwards
+//            NSData *adata = [[NSData alloc] initWithBytesNoCopy:buffer length:assetRep.size freeWhenDone:YES];
+//            
+//            // identify image type (jpeg, png, RAW file, ...) using UTI hint
+//            NSDictionary* sourceOptionsDict = [NSDictionary dictionaryWithObjectsAndKeys:(id)[assetRep UTI] ,kCGImageSourceTypeIdentifierHint,nil];
+//            
+//            NSLog(@"SOURCE OPTS: %@", sourceOptionsDict);
+//            
+//            // create CGImageSource with NSData
+//            CGImageSourceRef sourceRef = CGImageSourceCreateWithData((__bridge CFDataRef) adata,  (__bridge CFDictionaryRef) sourceOptionsDict);
+//            
+//            NSLog(@"SOURCE REF: %@", sourceRef);
+//            
+//            // get imagePropertiesDictionary
+//            CFDictionaryRef imagePropertiesDictionary;
+//            imagePropertiesDictionary = CGImageSourceCopyPropertiesAtIndex(sourceRef,0, NULL);
+//            
+//            NSLog(@"IMAGE PROPERTIES: %@", imagePropertiesDictionary);
+//            
+//            if(imagePropertiesDictionary){
+//                // get exif data
+//                CFDictionaryRef exif = (CFDictionaryRef)CFDictionaryGetValue(imagePropertiesDictionary, kCGImagePropertyExifDictionary);
+//                NSDictionary *exif_dict = (__bridge NSDictionary*)exif;
+//                NSLog(@"exif_dict: %@",exif_dict);
+//            }
+            
+            
+//            ===============
+//            ROUND 3 WORKED!! but no GPS :'(
+//            ===============
+//            CFDictionaryRef imagePropertiesRef          = (__bridge CFDictionaryRef)asset.defaultRepresentation.metadata;
+//            NSLog(@"==================");
+//            NSLog(@"DATA: %@", imagePropertiesRef);
+//            NSLog(@"==================");
+            
+            
+            
+//            ===============
+//            ROUND 4 LESS DATA and no GPS :-/
+//            ===============
+//            NSData* pngData =  UIImagePNGRepresentation(image);
+//
+//            CGImageSourceRef source = CGImageSourceCreateWithData((CFDataRef)pngData, NULL);
+//            NSDictionary *metadata = (NSDictionary *) CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(source, 0, NULL));
+//
+//            NSMutableDictionary *metadataAsMutable = [metadata mutableCopy];
+//
+//            //For GPS Dictionary
+//            NSMutableDictionary *GPSDictionary = [[metadataAsMutable objectForKey:(NSString *)kCGImagePropertyGPSDictionary]mutableCopy];
+//            if(!GPSDictionary) 
+//                GPSDictionary = [NSMutableDictionary dictionary];
+//            
+//            NSLog(@"==================");
+//            NSLog(@"METADATA: %@", metadata);
+//            NSLog(@"GPSDict: %@", GPSDictionary);
+//            NSLog(@"==================");
+           
+            
+            
+//            ===============
+//            ROUND 5 NO GPS
+//            ===============
+//            CGImageSourceRef mySourceRef = CGImageSourceCreateWithData((CFDataRef)data, NULL);
+//            
+//            //CGImageSourceRef mySourceRef = CGImageSourceCreateWithURL((__bridge CFURLRef)myURL, NULL);
+//            if (mySourceRef){
+//                NSDictionary *myMetadata = (__bridge NSDictionary *)CGImageSourceCopyPropertiesAtIndex(mySourceRef,0,NULL);
+//                NSLog(@"DATA: %@", myMetadata);
+//                NSDictionary *exifDic = [myMetadata objectForKey:(NSString *)kCGImagePropertyExifDictionary];
+//                NSDictionary *tiffDic = [myMetadata objectForKey:(NSString *)kCGImagePropertyTIFFDictionary];
+//                NSLog(@"exifDic properties: %@", myMetadata); //all data
+//                float rawShutterSpeed = [[exifDic objectForKey:(NSString *)kCGImagePropertyExifExposureTime] floatValue];
+//                int decShutterSpeed = (1 / rawShutterSpeed);
+//                NSLog(@"Camera %@",[tiffDic objectForKey:(NSString *)kCGImagePropertyTIFFModel]);
+//                NSLog(@"Focal Length %@mm",[exifDic objectForKey:(NSString *)kCGImagePropertyExifFocalLength]);
+//                NSLog(@"Shutter Speed %@", [NSString stringWithFormat:@"1/%d", decShutterSpeed]);
+//                NSLog(@"Aperture f/%@",[exifDic objectForKey:(NSString *)kCGImagePropertyExifFNumber]);
+//                
+//                
+//                NSNumber *ExifISOSpeed  = [[exifDic objectForKey:(NSString*)kCGImagePropertyExifISOSpeedRatings] objectAtIndex:0];
+//                NSLog(@"ISO %ld",(long)[ExifISOSpeed integerValue]);
+//                NSLog(@"Taken %@",[exifDic objectForKey:(NSString*)kCGImagePropertyExifDateTimeDigitized]);
+//                
+//                
+//            }
+            
+            
+//            ===============
+//            ROUND 6
+//            ===============
+            NSDictionary* pickedImageMetadata = [assetRep metadata];
+            NSDictionary* gpsInfo = [pickedImageMetadata objectForKey:(__bridge NSString *)kCGImagePropertyGPSDictionary];
+            
+//            NSLog(@"==================");
+//            NSLog(@"GPS: %@", gpsInfo);
+//            NSLog(@"==================");
+            
+            if(!gpsInfo){
+                gpsInfo = @{};
+            }
+            
             if (![data writeToFile:filePath options:NSAtomicWrite error:&err]) {
                 result = [CDVPluginResult resultWithStatus:CDVCommandStatus_IO_EXCEPTION messageAsString:[err localizedDescription]];
                 break;
             } else {
-                [resultStrings addObject:[[NSURL fileURLWithPath:filePath] absoluteString]];
+//                [resultStrings addObject:[[NSURL fileURLWithPath:filePath] absoluteString]];
+                NSDictionary *dict = @{
+                                       @"src" : [[NSURL fileURLWithPath:filePath] absoluteString],
+                                       @"gps" : gpsInfo
+                                       };
+                [resultStrings addObject:dict];
             }
         }
 
