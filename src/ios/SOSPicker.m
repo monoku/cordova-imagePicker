@@ -85,7 +85,7 @@
             //so use UIImageOrientationUp when creating our image below.
             if (picker.returnsOriginalImage) {
                 imgRef = [assetRep fullResolutionImage];
-                orientation = [assetRep UIImageOrientationUp];
+                orientation = UIImageOrientationUp;
             } else {
                 imgRef = [assetRep fullScreenImage];
             }
