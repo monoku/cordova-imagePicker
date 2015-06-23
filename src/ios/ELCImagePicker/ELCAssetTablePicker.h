@@ -20,7 +20,8 @@
 @property (nonatomic, assign) BOOL singleSelection;
 @property (nonatomic, assign) BOOL immediateReturn;
 @property (nonatomic, strong) NSMutableArray *assetGroups;
-
+@property (nonatomic, assign) BOOL foundGroup;
+@property (nonatomic, strong) ALAssetsGroup *firstFound;
 
 - (void)assignAssetGroupName:(NSString*)name;
 

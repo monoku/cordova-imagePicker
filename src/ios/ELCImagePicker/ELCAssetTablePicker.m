@@ -86,6 +86,8 @@
     
     ALAssetsLibrary *assetLibrary = [[ALAssetsLibrary alloc] init];
     self.library = assetLibrary;
+    self.foundGroup = NO;
+    self.firstFound = Nil;
     
     if(self.assetGroup){
         [self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
@@ -98,17 +100,29 @@
                        // Group enumerator Block
                        void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) = ^(ALAssetsGroup *group, BOOL *stop)
                        {
-                           if (group == nil) {
+                           if (self.foundGroup) {
                                return;
                            }
                            
                            // added fix for camera albums order
                            NSString *sGroupPropertyName = (NSString *)[group valueForProperty:ALAssetsGroupPropertyName];
                            NSUInteger nType = [[group valueForProperty:ALAssetsGroupPropertyType] intValue];
+                           NSString *lowerCaseName = [sGroupPropertyName lowercaseString];
                            
-                           if ([[sGroupPropertyName lowercaseString] isEqualToString:@"camera roll"] && nType == ALAssetsGroupSavedPhotos) {
+                           if (([lowerCaseName isEqualToString:@"camera roll"] || [lowerCaseName isEqualToString:@"all photos"])
+                               && nType == ALAssetsGroupSavedPhotos) {
+                               self.foundGroup = YES;
                                self.assetGroup = group;
                                [self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
+                           } else {
+                               if( group ){
+                                   if( !self.firstFound ){
+                                       self.firstFound = group;
+                                   }
+                               } else {
+                                   self.assetGroup = self.firstFound;
+                                   [self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
+                               }
                            }
                        };
                        
