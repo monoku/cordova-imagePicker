@@ -214,6 +214,14 @@
             //            ===============
             NSDictionary* pickedImageMetadata = [assetRep metadata];
             NSDictionary* gpsInfo = [pickedImageMetadata objectForKey:(__bridge NSString *)kCGImagePropertyGPSDictionary];
+            NSDate *imageDate = [asset valueForProperty:ALAssetPropertyDate];
+            
+            NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+            NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+            [dateFormatter setLocale:enUSPOSIXLocale];
+            [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss"];
+            
+            NSString *iso8601String = [dateFormatter stringFromDate:imageDate];
             
             //            NSLog(@"==================");
             //            NSLog(@"GPS: %@", gpsInfo);
@@ -230,7 +238,8 @@
                 //                [resultStrings addObject:[[NSURL fileURLWithPath:filePath] absoluteString]];
                 NSDictionary *dict = @{
                                        @"src" : [[NSURL fileURLWithPath:filePath] absoluteString],
-                                       @"gps" : gpsInfo
+                                       @"gps" : gpsInfo,
+                                       @"date": iso8601String
                                        };
                 [resultStrings addObject:dict];
             }
